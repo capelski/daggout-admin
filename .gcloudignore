@@ -1,0 +1,10 @@
+node_modules/
+scripts/
+src/
+.env
+.gcloudignore
+.git
+.gitignore
+.prettierrc
+template.*
+tsconfig.json

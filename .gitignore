@@ -1,0 +1,6 @@
+dist/
+node_modules/
+public/
+.env
+env-variables.yaml
+firebase-service-account.json

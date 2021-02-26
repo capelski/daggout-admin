@@ -5,4 +5,5 @@ interface Receipt {
     items: ReceiptItem[];
     reference: string;
     timestamp: number;
+    userId: string;
 }

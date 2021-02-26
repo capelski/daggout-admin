@@ -195,6 +195,8 @@ app.post('/receipts', (req, res, next) => {
             return res.status(400).send('Missing receipt reference');
         } else if (!body.timestamp || isNaN(body.timestamp)) {
             return res.status(400).send('Missing receipt timestamp');
+        } else if (!body.userId) {
+            return res.status(400).send('Missing receipt userId');
         } else {
             if (!body.items || !(body.items instanceof Array) || body.items.length === 0) {
                 return res.status(400).send('Missing receipt items');
@@ -211,9 +213,9 @@ app.post('/receipts', (req, res, next) => {
 
         return new Promise((resolve, reject) => {
             connection.query(
-                `INSERT INTO daggout.receipt(address, amount, date, reference)
-VALUES (?,${body.amount},"${dbDate}", ?);`,
-                [body.address, body.reference],
+                `INSERT INTO daggout.receipt(address, amount, date, reference, userId)
+VALUES (?,${body.amount},"${dbDate}", ?, ?);`,
+                [body.address, body.reference, body.userId],
                 (err, results, fields) => {
                     if (err) {
                         reject(err);

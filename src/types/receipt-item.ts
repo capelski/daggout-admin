@@ -3,6 +3,6 @@ interface ReceiptItem {
     id: number;
     quantity: number;
     receiptId: number;
-    referenceId: string;
+    reference: string;
     size: string;
 }

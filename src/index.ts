@@ -1,6 +1,7 @@
 import bodyParser from 'body-parser';
 import express from 'express';
 import firebase from 'firebase-admin';
+import { ResultSetHeader } from 'mysql2';
 import { join } from 'path';
 import { config } from './config';
 import { UserData } from './types/user-data';
@@ -173,19 +174,20 @@ app.get('/api/receipts', (req, res, next) => {
         const connection = getDbConnection();
 
         return new Promise((resolve, reject) => {
-            connection.query('SELECT * FROM daggout.receipt;', (err, results, fields) => {
-                if (err) {
-                    reject(err);
+            connection.query('SELECT * FROM daggout.receipt;', (error, results, fields) => {
+                if (error) {
+                    reject(error);
                 }
                 resolve(results);
+                connection.end();
             });
         })
             .then((results) => {
-                console.log(results);
+                (results as Receipt[]).forEach((r) => (r.date = new Date(r.date).getTime()));
                 return res.json(results);
             })
-            .catch((err) => {
-                console.log(err);
+            .catch((error) => {
+                console.log(error);
                 return res.status(500).json({ message: 'Something went wrong' });
             });
     } catch (error) {
@@ -193,6 +195,8 @@ app.get('/api/receipts', (req, res, next) => {
         return res.status(500).json({ message: 'Something went wrong' });
     }
 });
+
+// TODO Endpoint to fetch receipts from the app
 
 app.post('/api/receipts', (req, res, next) => {
     try {
@@ -205,23 +209,30 @@ app.post('/api/receipts', (req, res, next) => {
         if (!body.amount || isNaN(body.amount)) {
             errors.push({ message: 'Missing receipt amount' });
         }
+        if (!body.brand) {
+            errors.push({ message: 'Missing receipt brand' });
+        }
         if (!body.date || isNaN(body.date)) {
             errors.push({ message: 'Missing receipt date' });
         }
-        if (!body.items || !(body.items instanceof Array) || body.items.length === 0) {
-            errors.push({ message: 'Missing receipt items' });
-        }
-        // TODO Validate receiptItems
-        // else {
-        //     body.items.filter((receiptItem) => {
-        //     });
-        // }
-
         if (!body.reference) {
             errors.push({ message: 'Missing receipt reference' });
         }
         if (!body.userId) {
             errors.push({ message: 'Missing receipt userId' });
+        }
+
+        if (!body.items || !(body.items instanceof Array) || body.items.length === 0) {
+            errors.push({ message: 'Missing receipt items' });
+        } else {
+            body.items.forEach((receiptItem, index) => {
+                if (!receiptItem.quantity || isNaN(receiptItem.quantity)) {
+                    errors.push({ message: `Receipt item ${index + 1}: Missing item quantity` });
+                }
+                if (!receiptItem.reference) {
+                    errors.push({ message: `Receipt item ${index + 1}: Missing item reference` });
+                }
+            });
         }
 
         if (errors.length > 0) {
@@ -233,22 +244,47 @@ app.post('/api/receipts', (req, res, next) => {
 
         return new Promise((resolve, reject) => {
             connection.query(
-                `INSERT INTO daggout.receipt(address, amount, date, reference, userId)
-VALUES (?,${body.amount},"${dbDate}", ?, ?);`,
-                [body.address, body.reference, body.userId],
-                (err, results, fields) => {
-                    if (err) {
-                        reject(err);
+                `INSERT INTO daggout.receipt (address, amount, brand, date, reference, userId)
+VALUES (?, ${body.amount}, ?, "${dbDate}", ?, ?);`,
+                [body.address, body.brand, body.reference, body.userId],
+                (error, results) => {
+                    if (error) {
+                        reject(error);
+                        connection.end();
                     }
                     resolve(results);
                 }
             );
         })
-            .then(() => {
-                return res.status(200).send('OK');
+            .then((results) => {
+                const receiptId = (results as ResultSetHeader).insertId;
+                const items = body.items.map((item) => [
+                    item.quantity,
+                    item.reference,
+                    receiptId,
+                    item.size,
+                    item.details
+                ]);
+
+                return new Promise<void>((resolve, reject) => {
+                    connection.query(
+                        `INSERT INTO
+daggout.receipt_item (quantity, reference, receiptId, size, details)
+VALUES ${items.map((i) => '(?)').join(', ')}`,
+                        items,
+                        (error) => {
+                            if (error) {
+                                reject(error);
+                            }
+                            resolve();
+                            connection.end();
+                        }
+                    );
+                });
             })
-            .catch((err) => {
-                console.log(err);
+            .then(() => res.status(200).send('OK'))
+            .catch((error) => {
+                console.log(error);
                 return res.status(500).json({ message: 'Something went wrong' });
             });
     } catch (error) {

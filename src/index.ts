@@ -30,6 +30,46 @@ app.post('/api/auth', (req, res, next) => {
     }
 });
 
+app.get('/api/user-receipts', (req, res, next) => {
+    const { daggoutId, firebaseId } = req.query;
+
+    if (!daggoutId) {
+        return res.status(400).json({ message: 'Missing daggoutId parameter' });
+    } else if (!firebaseId) {
+        return res.status(400).json({ message: 'Missing firebaseId parameter' });
+    } else {
+        try {
+            // TODO Check in Firebase that user/{firebaseId}/daggoutId === daggoutId
+            const connection = getDbConnection();
+
+            return new Promise((resolve, reject) => {
+                connection.query(
+                    'SELECT * FROM daggout.receipt WHERE userId = ?;',
+                    [daggoutId],
+                    (error, results, fields) => {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve(results);
+                        connection.end();
+                    }
+                );
+            })
+                .then((results) => {
+                    (results as Receipt[]).forEach((r) => (r.date = new Date(r.date).getTime()));
+                    return res.json(results);
+                })
+                .catch((error) => {
+                    console.log(error);
+                    return res.status(500).json({ message: 'Something went wrong' });
+                });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ message: 'Something went wrong' });
+        }
+    }
+});
+
 app.use((req, res, next) => {
     const authorizationToken = req.headers.authorization;
     if (!authorizationToken) {
@@ -195,8 +235,6 @@ app.get('/api/receipts', (req, res, next) => {
         return res.status(500).json({ message: 'Something went wrong' });
     }
 });
-
-// TODO Endpoint to fetch receipts from the app
 
 app.post('/api/receipts', (req, res, next) => {
     try {

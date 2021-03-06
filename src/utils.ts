@@ -13,6 +13,15 @@ export const getDbConnection = () =>
         socketPath: config.DB_SOCKET_PATH
     });
 
+export const isJsonString = (input: string) => {
+    try {
+        const parsed = JSON.parse(input);
+        return typeof parsed === 'object';
+    } catch (error) {
+        return false;
+    }
+};
+
 export const signJsonWebToken = (rawToken: JwtToken, secret: string) =>
     jsonwebtoken.sign(rawToken, secret, { expiresIn: '3h' });
 

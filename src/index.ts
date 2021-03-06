@@ -8,7 +8,10 @@ import { v4 as uuid } from 'uuid';
 import { config } from './config';
 import { UserData } from './types/user-data';
 import { getDbConnection, isJsonString, signJsonWebToken, verifyJsonWebToken } from './utils';
-const firebaseServiceAccount = require('../firebase-development-service-account.json');
+const firebaseServiceAccount =
+    config.ENVIRONMENT === 'production'
+        ? require('../firebase-production-service-account.json')
+        : require('../firebase-development-service-account.json');
 
 const app = express();
 const port = process.env.PORT || 3000;

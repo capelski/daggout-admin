@@ -12,6 +12,7 @@ import {
     getDbConnection,
     isJsonString,
     jsDateToMySqlDate,
+    parseReceiptDates,
     signJsonWebToken,
     verifyJsonWebToken
 } from './utils';
@@ -72,10 +73,7 @@ app.get('/api/user-receipts', (req, res, next) => {
                 );
             })
                 .then((results) => {
-                    results.forEach((r) => {
-                        r.purchaseDate = new Date(r.purchaseDate).getTime();
-                    });
-                    return res.json(results);
+                    return res.json(results.map(parseReceiptDates));
                 })
                 .catch((error) => {
                     console.error(error);
@@ -241,10 +239,7 @@ app.get('/api/receipts', (req, res, next) => {
             });
         })
             .then((results) => {
-                results.forEach((r) => {
-                    r.purchaseDate = new Date(r.purchaseDate).getTime();
-                });
-                return res.json(results);
+                return res.json(results.map(parseReceiptDates));
             })
             .catch((error) => {
                 console.error(error);
@@ -447,7 +442,7 @@ VALUES ${items.map((i) => '(?)').join(', ')}`,
                                             `${config.FIREBASE_FUNCTIONS_URL}/schedulePushNotificationHttp'`,
                                             {
                                                 body: JSON.stringify({
-                                                    receipt: {
+                                                    receipt: parseReceiptDates({
                                                         amount: receipt.amount,
                                                         devolutionPeriod: receipt.devolutionPeriod,
                                                         notificationAdvance:
@@ -456,7 +451,7 @@ VALUES ${items.map((i) => '(?)').join(', ')}`,
                                                         pictureId,
                                                         purchaseDate,
                                                         store: receipt.brand
-                                                    },
+                                                    }),
                                                     receiptId: String(receiptId),
                                                     userId: receipt.userId
                                                 }),

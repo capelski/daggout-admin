@@ -25,6 +25,12 @@ export const isJsonString = (input: string) => {
 export const jsDateToMySqlDate = (milliseconds: number) =>
     new Date(milliseconds).toISOString().slice(0, 19).replace('T', ' ');
 
+export const parseReceiptDates = (receipt: any) => {
+    receipt.notificationDate = new Date(receipt.notificationDate).getTime();
+    receipt.purchaseDate = new Date(receipt.purchaseDate).getTime();
+    return receipt;
+};
+
 export const signJsonWebToken = (rawToken: JwtToken, secret: string) =>
     jsonwebtoken.sign(rawToken, secret, { expiresIn: '3h' });
 

@@ -22,6 +22,9 @@ export const isJsonString = (input: string) => {
     }
 };
 
+export const jsDateToMySqlDate = (milliseconds: number) =>
+    new Date(milliseconds).toISOString().slice(0, 19).replace('T', ' ');
+
 export const signJsonWebToken = (rawToken: JwtToken, secret: string) =>
     jsonwebtoken.sign(rawToken, secret, { expiresIn: '3h' });
 

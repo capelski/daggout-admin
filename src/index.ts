@@ -3,11 +3,19 @@ import express from 'express';
 import firebase from 'firebase-admin';
 import multer from 'multer';
 import { ResultSetHeader } from 'mysql2';
+import fetch from 'node-fetch';
 import { join } from 'path';
 import { v4 as uuid } from 'uuid';
 import { config } from './config';
 import { UserData } from './types/user-data';
-import { getDbConnection, isJsonString, signJsonWebToken, verifyJsonWebToken } from './utils';
+import {
+    getDbConnection,
+    isJsonString,
+    jsDateToMySqlDate,
+    signJsonWebToken,
+    verifyJsonWebToken
+} from './utils';
+
 const firebaseServiceAccount =
     config.ENVIRONMENT === 'production'
         ? require('../firebase-production-service-account.json')
@@ -70,11 +78,11 @@ app.get('/api/user-receipts', (req, res, next) => {
                     return res.json(results);
                 })
                 .catch((error) => {
-                    console.log(error);
+                    console.error(error);
                     return res.status(500).json({ message: 'Something went wrong' });
                 });
         } catch (error) {
-            console.log(error);
+            console.error(error);
             return res.status(500).json({ message: 'Something went wrong' });
         }
     }
@@ -212,7 +220,7 @@ app.get('/api/firebase-stats', (req, res, next) => {
             });
         })
         .catch((error) => {
-            console.log(error);
+            console.error(error);
             return res.status(500).json({ message: 'Something went wrong' });
         })
         .finally(() => firebaseApp.delete());
@@ -239,11 +247,11 @@ app.get('/api/receipts', (req, res, next) => {
                 return res.json(results);
             })
             .catch((error) => {
-                console.log(error);
+                console.error(error);
                 return res.status(500).json({ message: 'Something went wrong' });
             });
     } catch (error) {
-        console.log(error);
+        console.error(error);
         return res.status(500).json({ message: 'Something went wrong' });
     }
 });
@@ -265,26 +273,32 @@ app.post(
             const errors: { message: string }[] = [];
 
             if (!receipt.address) {
-                errors.push({ message: 'Missing receipt address' });
+                errors.push({ message: 'Missing receipt Address' });
             }
             if (!receipt.amount || isNaN(receipt.amount)) {
-                errors.push({ message: 'Missing receipt amount' });
+                errors.push({ message: 'Missing receipt Amount' });
             }
             if (!receipt.brand) {
-                errors.push({ message: 'Missing receipt brand' });
+                errors.push({ message: 'Missing receipt Brand' });
+            }
+            if (receipt.devolutionPeriod && isNaN(receipt.devolutionPeriod)) {
+                errors.push({ message: 'Wrong Devolution period' });
+            }
+            if (receipt.notificationAdvance && isNaN(receipt.notificationAdvance)) {
+                errors.push({ message: 'Wrong Notification advance' });
             }
             if (!receipt.purchaseDate || isNaN(receipt.purchaseDate)) {
-                errors.push({ message: 'Missing receipt purchaseDate' });
+                errors.push({ message: 'Missing receipt Purchase date' });
             }
             if (!receipt.reference) {
-                errors.push({ message: 'Missing receipt reference' });
+                errors.push({ message: 'Missing receipt Reference' });
             }
             if (!receipt.userId) {
-                errors.push({ message: 'Missing receipt userId' });
+                errors.push({ message: 'Missing receipt User id' });
             }
 
             if (!receipt.items || !(receipt.items instanceof Array) || receipt.items.length === 0) {
-                errors.push({ message: 'Missing receipt items' });
+                errors.push({ message: 'Missing receipt Items' });
             } else {
                 receipt.items.forEach((receiptItem, index) => {
                     if (!receiptItem.quantity || isNaN(receiptItem.quantity)) {
@@ -310,6 +324,7 @@ app.post(
                 storageBucket: config.FIREBASE_STORAGE_BUCKET
             });
 
+            let receiptId: number;
             return firebaseApp
                 .database()
                 .ref(`daggoutIds/${receipt.userId}`)
@@ -340,15 +355,47 @@ app.post(
                             })
                             .then(() => {
                                 const connection = getDbConnection();
-                                const dbDate = new Date(receipt.purchaseDate)
-                                    .toISOString()
-                                    .slice(0, 19)
-                                    .replace('T', ' ');
+                                const purchaseDate = jsDateToMySqlDate(receipt.purchaseDate);
+
+                                let notificationDate: string | undefined;
+                                if (receipt.devolutionPeriod && receipt.notificationAdvance) {
+                                    const notificationDays =
+                                        receipt.devolutionPeriod - receipt.notificationAdvance;
+                                    const purchaseDate = new Date(receipt.purchaseDate);
+                                    const notificationDateMilliseconds = purchaseDate.setDate(
+                                        purchaseDate.getDate() + notificationDays
+                                    );
+
+                                    notificationDate = jsDateToMySqlDate(
+                                        notificationDateMilliseconds
+                                    );
+                                }
 
                                 return new Promise((resolve, reject) => {
                                     connection.query(
-                                        `INSERT INTO daggout.receipt (address, amount, brand, pictureId, purchaseDate, reference, userId)
-VALUES (?, ${receipt.amount}, ?, "${pictureId}", "${dbDate}", ?, ?);`,
+                                        `INSERT INTO daggout.receipt (
+    address,
+    amount,
+    brand,
+    devolutionPeriod,
+    notificationAdvance,
+    notificationDate,
+    pictureId,
+    purchaseDate,
+    reference,
+    userId)
+VALUES (
+    ?,
+    ${receipt.amount},
+    ?,
+    ${receipt.devolutionPeriod || 'NULL'},
+    ${receipt.notificationAdvance || 'NULL'},
+    ${notificationDate ? `"${notificationDate}"` : 'NULL'},
+    "${pictureId}",
+    "${purchaseDate}",
+    ?,
+    ?);`,
+
                                         [
                                             receipt.address,
                                             receipt.brand,
@@ -365,7 +412,7 @@ VALUES (?, ${receipt.amount}, ?, "${pictureId}", "${dbDate}", ?, ?);`,
                                     );
                                 })
                                     .then((results) => {
-                                        const receiptId = (results as ResultSetHeader).insertId;
+                                        receiptId = (results as ResultSetHeader).insertId;
                                         const items = receipt.items.map((item) => [
                                             item.quantity,
                                             item.reference,
@@ -390,16 +437,72 @@ VALUES ${items.map((i) => '(?)').join(', ')}`,
                                             );
                                         });
                                     })
-                                    .then(() => res.status(200).send('OK'))
+                                    .then(() => {
+                                        const idToken = signJsonWebToken(
+                                            { username: config.MASTER_USER! },
+                                            config.JWT_SECRET
+                                        );
+
+                                        return fetch(
+                                            `${config.FIREBASE_FUNCTIONS_URL}/schedulePushNotificationHttp'`,
+                                            {
+                                                body: JSON.stringify({
+                                                    receipt: {
+                                                        amount: receipt.amount,
+                                                        devolutionPeriod: receipt.devolutionPeriod,
+                                                        notificationAdvance:
+                                                            receipt.notificationAdvance,
+                                                        notificationDate,
+                                                        pictureId,
+                                                        purchaseDate,
+                                                        store: receipt.brand
+                                                    },
+                                                    receiptId: String(receiptId),
+                                                    userId: receipt.userId
+                                                }),
+                                                headers: {
+                                                    Authorization: idToken,
+                                                    'Content-Type': 'application/json'
+                                                },
+                                                method: 'POST'
+                                            }
+                                        )
+                                            .then((response) => {
+                                                if (response.ok) {
+                                                    return res.status(200).send('OK');
+                                                } else {
+                                                    return response
+                                                        .json()
+                                                        .then((error) => {
+                                                            console.error(error);
+                                                            return res.status(500).json({
+                                                                message: `Error creating the push notification: ${error.message}`
+                                                            });
+                                                        })
+                                                        .catch((error) => {
+                                                            console.error(error);
+                                                            return res.status(500).json({
+                                                                message: `Error creating the push notification: ${error.message}`
+                                                            });
+                                                        });
+                                                }
+                                            })
+                                            .catch((error) => {
+                                                console.error(error);
+                                                return res.status(500).json({
+                                                    message: 'Error creating the push notification'
+                                                });
+                                            });
+                                    })
                                     .catch((error) => {
-                                        console.log(error);
+                                        console.error(error);
                                         return res.status(500).json({
                                             message: 'Error inserting receipt into database'
                                         });
                                     });
                             })
                             .catch((error) => {
-                                console.log(error);
+                                console.error(error);
                                 return res
                                     .status(500)
                                     .json({ message: 'Error uploading the picture' });
@@ -410,16 +513,16 @@ VALUES ${items.map((i) => '(?)').join(', ')}`,
                     }
                 })
                 .catch((error) => {
-                    console.log(error);
+                    console.error(error);
                     return res.status(500).json({ message: `Error validating the user daggoutId` });
                 });
         } catch (error) {
-            console.log(error);
+            console.error(error);
             return res.status(500).json({ message: 'Something went wrong' });
         }
     }
 );
 
 app.listen(port, () => {
-    console.log('App listening at port', port);
+    console.info('App listening at port', port);
 });

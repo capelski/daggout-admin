@@ -439,7 +439,7 @@ VALUES ${items.map((i) => '(?)').join(', ')}`,
                                         );
 
                                         return fetch(
-                                            `${config.FIREBASE_FUNCTIONS_URL}/schedulePushNotificationHttp'`,
+                                            `${config.FIREBASE_FUNCTIONS_URL}/schedulePushNotificationHttp`,
                                             {
                                                 body: JSON.stringify({
                                                     receipt: parseReceiptDates({

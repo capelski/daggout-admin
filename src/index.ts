@@ -453,7 +453,7 @@ VALUES ${items.map((i) => '(?)').join(', ')}`,
                                                         store: receipt.brand
                                                     }),
                                                     receiptId: String(receiptId),
-                                                    userId: receipt.userId
+                                                    userId: firebaseUserId
                                                 }),
                                                 headers: {
                                                     Authorization: idToken,

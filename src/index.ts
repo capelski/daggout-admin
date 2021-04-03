@@ -258,8 +258,10 @@ app.post(
     (req, res, next) => {
         try {
             const receiptData = req.body.receipt;
-            if (!receiptData || !isJsonString(receiptData)) {
+            if (!receiptData) {
                 return res.status(400).json([{ message: 'Missing receipt data' }]);
+            } else if (!isJsonString(receiptData)) {
+                return res.status(400).json([{ message: 'Wrong receipt JSON data' }]);
             } else if (!req.file) {
                 return res.status(400).json([{ message: 'Missing receipt picture' }]);
             }
@@ -296,6 +298,21 @@ app.post(
                 errors.push({ message: 'Missing receipt Items' });
             } else {
                 receipt.items.forEach((receiptItem, index) => {
+                    if (!receiptItem.amount || isNaN(receiptItem.amount)) {
+                        errors.push({
+                            message: `Receipt item ${index + 1}: Missing item amount`
+                        });
+                    }
+                    if (!receiptItem.category) {
+                        errors.push({
+                            message: `Receipt item ${index + 1}: Missing item category`
+                        });
+                    }
+                    if (!receiptItem.name) {
+                        errors.push({
+                            message: `Receipt item ${index + 1}: Missing item name`
+                        });
+                    }
                     if (!receiptItem.quantity || isNaN(receiptItem.quantity)) {
                         errors.push({
                             message: `Receipt item ${index + 1}: Missing item quantity`
@@ -330,7 +347,7 @@ app.post(
                     if (!firebaseUserId) {
                         firebaseApp.delete();
                         return res.status(400).json({
-                            message: `The "${receipt.userId}" user daggoutID doesn't exist `
+                            message: `The "${receipt.userId}" daggout ID doesn't exist `
                         });
                     } else {
                         const filenameParts = req.file.originalname.split('.');
@@ -409,17 +426,20 @@ VALUES (
                                     .then((results) => {
                                         receiptId = (results as ResultSetHeader).insertId;
                                         const items = receipt.items.map((item) => [
+                                            item.amount,
+                                            item.category,
+                                            item.color,
+                                            item.name,
                                             item.quantity,
                                             item.reference,
                                             receiptId,
-                                            item.size,
-                                            item.details
+                                            item.size
                                         ]);
 
                                         return new Promise<void>((resolve, reject) => {
                                             connection.query(
                                                 `INSERT INTO
-daggout.receipt_item (quantity, reference, receiptId, size, details)
+daggout.receipt_item (amount, category, color, name, quantity, reference, receiptId, size)
 VALUES ${items.map((i) => '(?)').join(', ')}`,
                                                 items,
                                                 (error) => {

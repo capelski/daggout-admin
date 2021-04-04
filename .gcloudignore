@@ -1,6 +1,6 @@
 node_modules/
 scripts/
-src/
+src-server/
 # .env file must be ignored in production so env-variables.yaml parameters are used instead
 .env
 .gcloudignore

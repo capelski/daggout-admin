@@ -1,11 +1,13 @@
+.git/
+.vscode/
 node_modules/
 scripts/
+src-client/
 src-server/
 # .env file must be ignored in production so env-variables.yaml parameters are used instead
 .env
 .gcloudignore
-.git
 .gitignore
 .prettierrc
 template.*
-tsconfig.json
+tsconfig-base.json

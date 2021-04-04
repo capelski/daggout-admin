@@ -60,11 +60,18 @@ app.get('/api/user-receipts', (req, res, next) => {
                     'SELECT * FROM daggout.receipt WHERE userId = ?;',
                     [daggoutId],
                     (error, results, fields) => {
+                        try {
+                            connection.end();
+                        } catch {
+                            // If socket has been closed by the other side, trying to end the connection
+                            // will raise an exception; empty catch due to connection is already closed
+                        }
+
                         if (error) {
                             reject(error);
+                        } else {
+                            resolve(results as Receipt[]);
                         }
-                        resolve(results as Receipt[]);
-                        connection.end();
                     }
                 );
             })
@@ -227,11 +234,18 @@ app.get('/api/receipts', (req, res, next) => {
 
         return new Promise<Receipt[]>((resolve, reject) => {
             connection.query('SELECT * FROM daggout.receipt;', (error, results, fields) => {
+                try {
+                    connection.end();
+                } catch {
+                    // If socket has been closed by the other side, trying to end the connection
+                    // will raise an exception; empty catch due to connection is already closed
+                }
+
                 if (error) {
                     reject(error);
+                } else {
+                    resolve(results as Receipt[]);
                 }
-                resolve(results as Receipt[]);
-                connection.end();
             });
         })
             .then((results) => {
@@ -412,10 +426,16 @@ VALUES (
                                         ],
                                         (error, results) => {
                                             if (error) {
+                                                try {
+                                                    connection.end();
+                                                } catch {
+                                                    // If socket has been closed by the other side, trying to end the connection
+                                                    // will raise an exception; empty catch due to connection is already closed
+                                                }
                                                 reject(error);
-                                                connection.end();
+                                            } else {
+                                                resolve(results);
                                             }
-                                            resolve(results);
                                         }
                                     );
                                 })
@@ -439,11 +459,18 @@ daggout.receipt_item (amount, category, color, name, quantity, reference, receip
 VALUES ${items.map((i) => '(?)').join(', ')}`,
                                                 items,
                                                 (error) => {
+                                                    try {
+                                                        connection.end();
+                                                    } catch {
+                                                        // If socket has been closed by the other side, trying to end the connection
+                                                        // will raise an exception; empty catch due to connection is already closed
+                                                    }
+
                                                     if (error) {
                                                         reject(error);
+                                                    } else {
+                                                        resolve();
                                                     }
-                                                    resolve();
-                                                    connection.end();
                                                 }
                                             );
                                         });

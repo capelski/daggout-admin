@@ -16,10 +16,7 @@ import {
     verifyJsonWebToken
 } from './utils';
 
-const firebaseServiceAccount =
-    config.ENVIRONMENT === 'production'
-        ? require('../firebase-production-service-account.json')
-        : require('../firebase-development-service-account.json');
+const firebaseServiceAccount = require(join(__dirname, '..', config.FIREBASE_SERVICE_ACCOUNT_FILE));
 
 const app = express();
 const port = process.env.PORT || 3000;

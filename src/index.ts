@@ -1,4 +1,3 @@
-import bodyParser from 'body-parser';
 import express from 'express';
 import firebase from 'firebase-admin';
 import multer from 'multer';
@@ -31,7 +30,7 @@ const multerMiddleware = multer({
 
 app.use('/', express.static(join(__dirname, '..', 'public')));
 
-app.post('/api/auth', bodyParser.json(), (req, res, next) => {
+app.post('/api/auth', express.json(), (req, res, next) => {
     const body = req.body;
 
     if (!body.username) {
@@ -253,7 +252,7 @@ app.get('/api/receipts', (req, res, next) => {
 
 app.post(
     '/api/receipts',
-    bodyParser.urlencoded({ extended: true }),
+    express.urlencoded({ extended: true }),
     multerMiddleware.single('picture'),
     (req, res, next) => {
         try {

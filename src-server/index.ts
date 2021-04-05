@@ -288,7 +288,9 @@ app.get('/api/receipts/:id', (req, res, next) => {
             );
         })
             .then((receipt) => {
-                if (receipt) {
+                if (!receipt) {
+                    return res.status(404).json({ message: `There is no receipt with Id "${id}"` });
+                } else {
                     return new Promise<Receipt>((resolve, reject) => {
                         connection.query(
                             'SELECT * FROM receipt_item WHERE receiptId = ?;',
@@ -310,62 +312,60 @@ app.get('/api/receipts/:id', (req, res, next) => {
                         );
                     })
                         .then((receipt) => {
-                            return res.json(receipt);
+                            const firebaseApp = firebase.initializeApp({
+                                credential: firebase.credential.cert(firebaseServiceAccount),
+                                databaseURL: config.FIREBASE_DATABASE_URL,
+                                storageBucket: config.FIREBASE_STORAGE_BUCKET
+                            });
 
-                            // TODO Display receipt's picture url
+                            return firebaseApp
+                                .database()
+                                .ref(`daggoutIds/${receipt.userId}`)
+                                .once('value')
+                                .then((snapshot) => {
+                                    const firebaseUserId = snapshot.val();
 
-                            // const firebaseApp = firebase.initializeApp({
-                            //     credential: firebase.credential.cert(firebaseServiceAccount),
-                            //     databaseURL: config.FIREBASE_DATABASE_URL,
-                            //     storageBucket: config.FIREBASE_STORAGE_BUCKET
-                            // });
-
-                            // return firebaseApp
-                            //     .database()
-                            //     .ref(`daggoutIds/${receipt.userId}`)
-                            //     .once('value')
-                            //     .then((snapshot) => {
-                            //         const firebaseUserId = snapshot.val();
-
-                            //         return firebase
-                            //             .storage()
-                            //             .bucket(`receipts/${firebaseUserId}/${receipt.pictureId}`)
-                            //             .getMetadata()
-                            //             .then((metadata) => {
-                            //                 console.log(metadata);
-
-                            //                 return res.json({
-                            //                     ...receipt,
-                            //                     pictureUrl:
-                            //                         'https://firebasestorage.googleapis.com/v0/b/daggout-users-production.appspot.com/o/receipts%2F3ayUIFRc4YSrchsoQNBIOFumOp72%2F1617543219203.png?alt=media&token=41c03201-6790-4936-86c8-0a49d98cc3c0'
-                            //                 });
-                            //             })
-                            //             .catch((error) => {
-                            //                 console.error("Error getting the receipt's picture url", error);
-                            //                 return res.json(receipt);
-                            //             });
-                            //     })
-                            //     .catch((error) => {
-                            //         console.error(
-                            //             `Error getting "${receipt.userId}" daggout ID`,
-                            //             JSON.stringify(error)
-                            //         );
-                            //         return res.json(receipt);
-                            //     })
-                            //     .finally(() => {
-                            //         firebaseApp.delete();
-                            //     });
+                                    return firebase
+                                        .storage()
+                                        .bucket()
+                                        .file(`receipts/${firebaseUserId}/${receipt.pictureId}`)
+                                        .getSignedUrl({
+                                            action: 'read',
+                                            expires: new Date().getTime() + 3600 * 1000
+                                        })
+                                        .then((signedUrls) => {
+                                            return res.json({
+                                                ...receipt,
+                                                pictureUrl: signedUrls[0]
+                                            });
+                                        })
+                                        .catch((error) => {
+                                            console.error(
+                                                "Error getting the receipt's picture url",
+                                                error
+                                            );
+                                            return res.json(receipt);
+                                        });
+                                })
+                                .catch((error) => {
+                                    console.error(
+                                        `Error getting "${receipt.userId}" daggout ID`,
+                                        JSON.stringify(error)
+                                    );
+                                    return res.json(receipt);
+                                })
+                                .finally(() => {
+                                    firebaseApp.delete();
+                                });
                         })
                         .catch((error) => {
-                            console.error(error);
+                            console.error('Error querying the receipt items', error);
                             return res.status(500).json({ message: 'Something went wrong' });
                         });
-                } else {
-                    return res.status(404).json({ message: `There is no receipt with Id "${id}"` });
                 }
             })
             .catch((error) => {
-                console.error(error);
+                console.error('Error querying the receipt', error);
                 return res.status(500).json({ message: 'Something went wrong' });
             });
     } catch (error) {

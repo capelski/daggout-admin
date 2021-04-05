@@ -171,7 +171,6 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                 <p>
                     Picture
                     <input disabled={true} type="text" value={receipt.pictureId} />
-                    {/* TODO Display receipt picture */}
                 </p>
             ) : (
                 <p>
@@ -185,6 +184,8 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                     />
                 </p>
             )}
+
+            {receipt?.pictureUrl && <img src={receipt.pictureUrl} style={{ maxWidth: '100%' }} />}
 
             <h4>Items</h4>
             <button disabled={isReadOnlyMode || isLoading} onClick={addItemHandler} type="button">

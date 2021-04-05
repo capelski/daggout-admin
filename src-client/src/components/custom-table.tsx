@@ -1,19 +1,10 @@
 import React from 'react';
-import { Column, useTable } from 'react-table';
+import { Column, Row, useTable } from 'react-table';
 
 interface CustomTableProps {
     columns: Column<any>[];
     data: any[];
-}
-
-interface EditableCellProps {
-    accessor: string;
-    collection: any[];
-    disabled?: boolean;
-    inputType?: string;
-    rowIndex: number;
-    setCollection: (collection: any[]) => void;
-    value: any;
+    onRowClick?: (row: Row<any>) => void;
 }
 
 export const CustomTable: React.FC<CustomTableProps> = (props) => {
@@ -44,7 +35,10 @@ export const CustomTable: React.FC<CustomTableProps> = (props) => {
                 {rows.map((row) => {
                     prepareRow(row);
                     return (
-                        <tr {...row.getRowProps()}>
+                        <tr
+                            {...row.getRowProps()}
+                            onClick={props.onRowClick ? () => props.onRowClick!(row) : undefined}
+                        >
                             {row.cells.map((cell) => {
                                 return (
                                     <td
@@ -64,6 +58,16 @@ export const CustomTable: React.FC<CustomTableProps> = (props) => {
         </table>
     );
 };
+
+interface EditableCellProps {
+    accessor: string;
+    collection: any[];
+    disabled?: boolean;
+    inputType?: string;
+    rowIndex: number;
+    setCollection: (collection: any[]) => void;
+    value: any;
+}
 
 export const EditableCell: React.FC<EditableCellProps> = (props) => {
     const [localValue, setLocalValue] = React.useState(props.value);

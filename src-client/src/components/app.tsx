@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Link, Redirect, Route, Switch } from 'react-router-dom';
-import { AddReceipt } from './add-receipt';
 import { Auth } from './auth';
 import { FirebaseStats } from './firebase-stats';
+import { ReceiptDetails } from './receipt-details';
 import { Receipts } from './receipts';
 
 export const App: React.FC = () => {
@@ -11,8 +11,8 @@ export const App: React.FC = () => {
     return authToken ? (
         <BrowserRouter>
             <nav>
-                <Link to="/add-receipt" className="navbar-link">
-                    Add receipt
+                <Link to="/receipt-details" className="navbar-link">
+                    Create receipt
                 </Link>
                 <Link to="/receipts" className="navbar-link">
                     Receipts
@@ -23,8 +23,8 @@ export const App: React.FC = () => {
             </nav>
 
             <Switch>
-                <Route path="/add-receipt">
-                    <AddReceipt authToken={authToken} />
+                <Route path="/receipt-details">
+                    <ReceiptDetails authToken={authToken} />
                 </Route>
                 <Route path="/firebase-stats">
                     <FirebaseStats authToken={authToken} />
@@ -32,7 +32,7 @@ export const App: React.FC = () => {
                 <Route path="/receipts">
                     <Receipts authToken={authToken} />
                 </Route>
-                <Redirect exact from="/" to="/add-receipt" />
+                <Redirect exact from="/" to="/receipt-details" />
             </Switch>
         </BrowserRouter>
     ) : (

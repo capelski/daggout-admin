@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { CustomTable } from './custom-table';
 
 interface ReceiptsProps {
@@ -8,6 +9,8 @@ interface ReceiptsProps {
 export const Receipts: React.FC<ReceiptsProps> = (props) => {
     const [errorMessage, setErrorMessage] = useState<string>();
     const [receipts, setReceipts] = useState<any[]>([]);
+
+    const history = useHistory();
 
     useEffect(() => {
         fetch('/api/receipts', {
@@ -24,10 +27,32 @@ export const Receipts: React.FC<ReceiptsProps> = (props) => {
                 }
             })
             .catch((error) => {
-                console.log(error);
+                console.error(error);
                 setErrorMessage(error);
             });
     }, []);
+
+    const fetchReceipt = (id: number) => {
+        fetch(`/api/receipts/${id}`, {
+            headers: {
+                Authorization: props.authToken
+            },
+            method: 'GET'
+        })
+            .then((response) => {
+                if (response.ok) {
+                    response.json().then((receipt) => {
+                        history.push('/receipt-details', receipt);
+                    });
+                } else {
+                    response.json().then((error) => setErrorMessage(error.message));
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                setErrorMessage(error);
+            });
+    };
 
     return (
         <React.Fragment>
@@ -82,6 +107,7 @@ export const Receipts: React.FC<ReceiptsProps> = (props) => {
                     }
                 ]}
                 data={receipts}
+                onRowClick={(row) => fetchReceipt(row.original.id)}
             />
         </React.Fragment>
     );

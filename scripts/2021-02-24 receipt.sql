@@ -1,4 +1,4 @@
-CREATE TABLE `daggout`.`receipt` (
+CREATE TABLE `receipt` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `address` VARCHAR(100) NOT NULL,
   `amount` FLOAT NOT NULL,
@@ -6,7 +6,7 @@ CREATE TABLE `daggout`.`receipt` (
   `reference` VARCHAR(50) NOT NULL,
   PRIMARY KEY (`id`));
 
-CREATE TABLE `daggout`.`receipt_item` (
+CREATE TABLE `receipt_item` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `details` VARCHAR(100) NULL,
   `quantity` INT NULL,
@@ -17,6 +17,6 @@ CREATE TABLE `daggout`.`receipt_item` (
   INDEX `receipt_id_idx` (`receipt_id` ASC),
   CONSTRAINT `receipt_id`
     FOREIGN KEY (`receipt_id`)
-    REFERENCES `daggout`.`receipt` (`id`)
+    REFERENCES `receipt` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);

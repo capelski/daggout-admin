@@ -57,7 +57,7 @@ app.get('/api/user-receipts', (req, res, next) => {
 
             return new Promise<Receipt[]>((resolve, reject) => {
                 connection.query(
-                    'SELECT * FROM daggout.receipt WHERE userId = ?;',
+                    'SELECT * FROM receipt WHERE userId = ?;',
                     [daggoutId],
                     (error, results, fields) => {
                         try {
@@ -231,7 +231,7 @@ app.get('/api/receipts', (req, res, next) => {
         const connection = getDbConnection();
 
         return new Promise<Receipt[]>((resolve, reject) => {
-            connection.query('SELECT * FROM daggout.receipt;', (error, results, fields) => {
+            connection.query('SELECT * FROM receipt;', (error, results, fields) => {
                 try {
                     connection.end();
                 } catch {
@@ -263,9 +263,9 @@ app.get('/api/receipts/:id', (req, res, next) => {
     try {
         const connection = getDbConnection();
 
-        return new Promise<Receipt>((resolve, reject) => {
+        return new Promise<Receipt | undefined>((resolve, reject) => {
             connection.query(
-                'SELECT * FROM daggout.receipt WHERE id = ?;',
+                'SELECT * FROM receipt WHERE id = ?;',
                 [id],
                 (error, results, fields) => {
                     if (error) {
@@ -278,79 +278,91 @@ app.get('/api/receipts/:id', (req, res, next) => {
 
                         reject(error);
                     } else {
-                        resolve(parseReceiptDates((results as Receipt[])[0]));
+                        resolve(
+                            (results as []).length > 0
+                                ? parseReceiptDates((results as Receipt[])[0])
+                                : undefined
+                        );
                     }
                 }
             );
         })
             .then((receipt) => {
-                return new Promise<Receipt>((resolve, reject) => {
-                    connection.query(
-                        'SELECT * FROM daggout.receipt_item WHERE receiptId = ?;',
-                        [id],
-                        (error, results, fields) => {
-                            try {
-                                connection.end();
-                            } catch {
-                                // If socket has been closed by the other side, trying to end the connection
-                                // will raise an exception; empty catch due to connection is already closed
+                if (receipt) {
+                    return new Promise<Receipt>((resolve, reject) => {
+                        connection.query(
+                            'SELECT * FROM receipt_item WHERE receiptId = ?;',
+                            [id],
+                            (error, results, fields) => {
+                                try {
+                                    connection.end();
+                                } catch {
+                                    // If socket has been closed by the other side, trying to end the connection
+                                    // will raise an exception; empty catch due to connection is already closed
+                                }
+
+                                if (error) {
+                                    reject(error);
+                                } else {
+                                    resolve({ ...receipt, items: results as ReceiptItem[] });
+                                }
                             }
+                        );
+                    })
+                        .then((receipt) => {
+                            return res.json(receipt);
 
-                            if (error) {
-                                reject(error);
-                            } else {
-                                resolve({ ...receipt, items: results as ReceiptItem[] });
-                            }
-                        }
-                    );
-                });
-            })
-            .then((receipt) => {
-                return res.json(receipt);
+                            // TODO Display receipt's picture url
 
-                // TODO Display receipt's picture url
+                            // const firebaseApp = firebase.initializeApp({
+                            //     credential: firebase.credential.cert(firebaseServiceAccount),
+                            //     databaseURL: config.FIREBASE_DATABASE_URL,
+                            //     storageBucket: config.FIREBASE_STORAGE_BUCKET
+                            // });
 
-                // const firebaseApp = firebase.initializeApp({
-                //     credential: firebase.credential.cert(firebaseServiceAccount),
-                //     databaseURL: config.FIREBASE_DATABASE_URL,
-                //     storageBucket: config.FIREBASE_STORAGE_BUCKET
-                // });
+                            // return firebaseApp
+                            //     .database()
+                            //     .ref(`daggoutIds/${receipt.userId}`)
+                            //     .once('value')
+                            //     .then((snapshot) => {
+                            //         const firebaseUserId = snapshot.val();
 
-                // return firebaseApp
-                //     .database()
-                //     .ref(`daggoutIds/${receipt.userId}`)
-                //     .once('value')
-                //     .then((snapshot) => {
-                //         const firebaseUserId = snapshot.val();
+                            //         return firebase
+                            //             .storage()
+                            //             .bucket(`receipts/${firebaseUserId}/${receipt.pictureId}`)
+                            //             .getMetadata()
+                            //             .then((metadata) => {
+                            //                 console.log(metadata);
 
-                //         return firebase
-                //             .storage()
-                //             .bucket(`receipts/${firebaseUserId}/${receipt.pictureId}`)
-                //             .getMetadata()
-                //             .then((metadata) => {
-                //                 console.log(metadata);
-
-                //                 return res.json({
-                //                     ...receipt,
-                //                     pictureUrl:
-                //                         'https://firebasestorage.googleapis.com/v0/b/daggout-users-production.appspot.com/o/receipts%2F3ayUIFRc4YSrchsoQNBIOFumOp72%2F1617543219203.png?alt=media&token=41c03201-6790-4936-86c8-0a49d98cc3c0'
-                //                 });
-                //             })
-                //             .catch((error) => {
-                //                 console.error("Error getting the receipt's picture url", error);
-                //                 return res.json(receipt);
-                //             });
-                //     })
-                //     .catch((error) => {
-                //         console.error(
-                //             `Error getting "${receipt.userId}" daggout ID`,
-                //             JSON.stringify(error)
-                //         );
-                //         return res.json(receipt);
-                //     })
-                //     .finally(() => {
-                //         firebaseApp.delete();
-                //     });
+                            //                 return res.json({
+                            //                     ...receipt,
+                            //                     pictureUrl:
+                            //                         'https://firebasestorage.googleapis.com/v0/b/daggout-users-production.appspot.com/o/receipts%2F3ayUIFRc4YSrchsoQNBIOFumOp72%2F1617543219203.png?alt=media&token=41c03201-6790-4936-86c8-0a49d98cc3c0'
+                            //                 });
+                            //             })
+                            //             .catch((error) => {
+                            //                 console.error("Error getting the receipt's picture url", error);
+                            //                 return res.json(receipt);
+                            //             });
+                            //     })
+                            //     .catch((error) => {
+                            //         console.error(
+                            //             `Error getting "${receipt.userId}" daggout ID`,
+                            //             JSON.stringify(error)
+                            //         );
+                            //         return res.json(receipt);
+                            //     })
+                            //     .finally(() => {
+                            //         firebaseApp.delete();
+                            //     });
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                            return res.status(500).json({ message: 'Something went wrong' });
+                        });
+                } else {
+                    return res.status(404).json({ message: `There is no receipt with Id "${id}"` });
+                }
             })
             .catch((error) => {
                 console.error(error);
@@ -496,7 +508,7 @@ app.post(
 
                                 return new Promise((resolve, reject) => {
                                     connection.query(
-                                        `INSERT INTO daggout.receipt (
+                                        `INSERT INTO receipt (
     address,
     amount,
     brand,
@@ -556,7 +568,7 @@ VALUES (
                                         return new Promise<void>((resolve, reject) => {
                                             connection.query(
                                                 `INSERT INTO
-daggout.receipt_item (amount, category, color, name, quantity, reference, receiptId, size)
+receipt_item (amount, category, color, name, quantity, reference, receiptId, size)
 VALUES ${items.map((i) => '(?)').join(', ')}`,
                                                 items,
                                                 (error) => {

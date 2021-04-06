@@ -87,7 +87,7 @@ app.get('/api/user-receipts', (req, res, next) => {
     }
 });
 
-app.use((req, res, next) => {
+const authMiddleware: express.Handler = (req, res, next) => {
     const authorizationToken = req.headers.authorization;
     if (!authorizationToken) {
         return res.status(401).json({ message: 'Authorization token required' });
@@ -98,9 +98,9 @@ app.use((req, res, next) => {
             next();
         })
         .catch(() => res.status(401).json({ message: 'Invalid authorization token' }));
-});
+};
 
-app.get('/api/firebase-stats', (req, res, next) => {
+app.get('/api/firebase-stats', authMiddleware, (req, res, next) => {
     let usersDictionary: { [key: string]: string };
 
     const firebaseApp = firebase.initializeApp({
@@ -226,7 +226,7 @@ app.get('/api/firebase-stats', (req, res, next) => {
 });
 
 // TODO Implement paging, filtering and sorting
-app.get('/api/receipts', (req, res, next) => {
+app.get('/api/receipts', authMiddleware, (req, res, next) => {
     try {
         const connection = getDbConnection();
 
@@ -257,7 +257,7 @@ app.get('/api/receipts', (req, res, next) => {
     }
 });
 
-app.get('/api/receipts/:id', (req, res, next) => {
+app.get('/api/receipts/:id', authMiddleware, (req, res, next) => {
     const { id } = req.params;
 
     try {
@@ -376,6 +376,7 @@ app.get('/api/receipts/:id', (req, res, next) => {
 
 app.post(
     '/api/receipts',
+    authMiddleware,
     express.urlencoded({ extended: true }),
     multerMiddleware.single('picture'),
     (req, res, next) => {
@@ -673,6 +674,10 @@ VALUES ${items.map((i) => '(?)').join(', ')}`,
         }
     }
 );
+
+app.use((req, res, next) => {
+    res.sendFile(join(__dirname, '..', 'public', 'index.html'));
+});
 
 app.listen(port, () => {
     console.info('App listening at port', port);

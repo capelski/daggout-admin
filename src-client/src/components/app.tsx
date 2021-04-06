@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Link, Redirect, Route, Switch } from 'react-router-dom';
+import { clearAuthToken } from '../storage';
 import { Auth } from './auth';
 import { FirebaseStats } from './firebase-stats';
 import { ReceiptDetails } from './receipt-details';
@@ -20,6 +21,14 @@ export const App: React.FC = () => {
                 <Link to="/firebase-stats" className="navbar-link">
                     Firebase stats
                 </Link>
+                <button
+                    onClick={() => {
+                        clearAuthToken();
+                        setAuthToken(undefined);
+                    }}
+                >
+                    Sign out
+                </button>
             </nav>
 
             <Switch>

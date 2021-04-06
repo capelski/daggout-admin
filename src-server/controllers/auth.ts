@@ -1,8 +1,9 @@
 import express from 'express';
+import jsonwebtoken from 'jsonwebtoken';
 import { config } from '../config';
-import { signJsonWebToken, verifyJsonWebToken } from '../utils';
+import { JwtToken } from '../types/jwt-token';
 
-export const authHandler: express.Handler = (req, res, next) => {
+export const authHandler: express.Handler = (req, res, _next) => {
     const body = req.body;
 
     if (!body.username) {
@@ -25,8 +26,31 @@ export const authMiddleware: express.Handler = (req, res, next) => {
     }
 
     return verifyJsonWebToken(authorizationToken, config.JWT_SECRET)
-        .then(() => {
-            next();
-        })
+        .then(() => next())
         .catch(() => res.status(401).json({ message: 'Invalid authorization token' }));
+};
+
+export const refreshTokenHandler: express.Handler = (req, res, _next) => {
+    const authorizationToken = req.headers.authorization!;
+
+    return verifyJsonWebToken(authorizationToken, config.JWT_SECRET).then((token) =>
+        res.json({
+            token: signJsonWebToken({ username: token.username }, config.JWT_SECRET)
+        })
+    );
+};
+
+export const signJsonWebToken = (rawToken: JwtToken, secret: string) =>
+    jsonwebtoken.sign(rawToken, secret, { expiresIn: '3h' });
+
+export const verifyJsonWebToken = (encodedToken: string, secret: string): Promise<JwtToken> => {
+    return new Promise((resolve, reject) => {
+        jsonwebtoken.verify(encodedToken, secret, undefined, (error, decodedToken) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(decodedToken as JwtToken);
+            }
+        });
+    });
 };

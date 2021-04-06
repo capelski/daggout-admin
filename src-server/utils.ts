@@ -1,7 +1,5 @@
-import jsonwebtoken from 'jsonwebtoken';
 import mysql2 from 'mysql2';
 import { config } from './config';
-import { JwtToken } from './types/jwt-token';
 
 export const getDbConnection = () =>
     mysql2.createConnection({
@@ -29,19 +27,4 @@ export const parseReceiptDates = (receipt: any) => {
     receipt.notificationDate = new Date(receipt.notificationDate).getTime();
     receipt.purchaseDate = new Date(receipt.purchaseDate).getTime();
     return receipt;
-};
-
-export const signJsonWebToken = (rawToken: JwtToken, secret: string) =>
-    jsonwebtoken.sign(rawToken, secret, { expiresIn: '3h' });
-
-export const verifyJsonWebToken = (encodedToken: string, secret: string): Promise<JwtToken> => {
-    return new Promise((resolve, reject) => {
-        jsonwebtoken.verify(encodedToken, secret, undefined, (error, decodedToken) => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve(decodedToken as JwtToken);
-            }
-        });
-    });
 };

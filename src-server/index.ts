@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { join } from 'path';
-import { authHandler, authMiddleware } from './controllers/auth';
+import { authHandler, authMiddleware, refreshTokenHandler } from './controllers/auth';
 import { firebaseStatsHandler } from './controllers/firebase';
 import {
     createReceiptHandler,
@@ -20,6 +20,8 @@ const multerMiddleware = multer({
 app.use('/', express.static(join(__dirname, '..', 'public')));
 
 app.post('/api/auth', express.json(), authHandler);
+
+app.post('/api/refresh-token', authMiddleware, refreshTokenHandler);
 
 app.get('/api/user-receipts', getUserReceiptsHandler);
 

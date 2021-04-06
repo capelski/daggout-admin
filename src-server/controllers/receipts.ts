@@ -4,13 +4,8 @@ import { ResultSetHeader } from 'mysql2';
 import fetch from 'node-fetch';
 import { v4 as uuid } from 'uuid';
 import { config } from '../config';
-import {
-    getDbConnection,
-    isJsonString,
-    jsDateToMySqlDate,
-    parseReceiptDates,
-    signJsonWebToken
-} from '../utils';
+import { getDbConnection, isJsonString, jsDateToMySqlDate, parseReceiptDates } from '../utils';
+import { signJsonWebToken } from './auth';
 
 export const createReceiptHandler: express.Handler = (req, res, next) => {
     try {

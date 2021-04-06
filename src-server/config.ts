@@ -1,25 +1,9 @@
 import dotenv from 'dotenv';
 import { join } from 'path';
 
-export type Config = {
-    DB_DATABASE?: string;
-    DB_HOST?: string;
-    DB_PASSWORD?: string;
-    DB_PORT: number;
-    DB_SOCKET_PATH?: string;
-    DB_USER?: string;
-    FIREBASE_DATABASE_URL?: string;
-    FIREBASE_FUNCTIONS_URL?: string;
-    FIREBASE_SERVICE_ACCOUNT: any;
-    FIREBASE_STORAGE_BUCKET?: string;
-    JWT_SECRET: string;
-    MASTER_USER?: string;
-    MASTER_PASSWORD?: string;
-};
-
 dotenv.config();
 
-export const config: Config = {
+export const config = {
     DB_DATABASE: process.env.DB_DATABASE,
     DB_HOST: process.env.DB_HOST,
     DB_PASSWORD: process.env.DB_PASSWORD,

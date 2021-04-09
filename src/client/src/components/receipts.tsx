@@ -9,6 +9,7 @@ interface ReceiptsProps {
 }
 
 export const Receipts: React.FC<ReceiptsProps> = (props) => {
+    const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string>();
     const [receipts, setReceipts] = useState<Receipt[]>([]);
 
@@ -31,10 +32,14 @@ export const Receipts: React.FC<ReceiptsProps> = (props) => {
             .catch((error) => {
                 console.error(error);
                 setErrorMessage(error);
+            })
+            .finally(() => {
+                setIsLoading(false);
             });
     }, []);
 
     const fetchReceipt = (id: number) => {
+        setIsLoading(true);
         fetch(`/api/receipts/${id}`, {
             headers: {
                 Authorization: props.authToken
@@ -47,10 +52,12 @@ export const Receipts: React.FC<ReceiptsProps> = (props) => {
                         history.push('/receipt-details', receipt);
                     });
                 } else {
+                    setIsLoading(false);
                     response.json().then((error) => setErrorMessage(error.message));
                 }
             })
             .catch((error) => {
+                setIsLoading(false);
                 console.error(error);
                 setErrorMessage(error);
             });
@@ -58,6 +65,9 @@ export const Receipts: React.FC<ReceiptsProps> = (props) => {
 
     return (
         <React.Fragment>
+            {isLoading && (
+                <img height={32} src="/images/spinner.gif" style={{ marginLeft: 16 }} width={32} />
+            )}
             <p>{errorMessage}</p>
             <CustomTable
                 columns={[
@@ -111,7 +121,7 @@ export const Receipts: React.FC<ReceiptsProps> = (props) => {
                     }
                 ]}
                 data={receipts}
-                onRowClick={(row) => fetchReceipt(row.original.id)}
+                onRowClick={isLoading ? undefined : (row) => fetchReceipt(row.original.id)}
             />
         </React.Fragment>
     );

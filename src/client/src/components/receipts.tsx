@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { CellProps } from 'react-table';
+import { Receipt } from '../../../shared/types';
 import { CustomTable } from './custom-table';
 
 interface ReceiptsProps {
@@ -8,7 +10,7 @@ interface ReceiptsProps {
 
 export const Receipts: React.FC<ReceiptsProps> = (props) => {
     const [errorMessage, setErrorMessage] = useState<string>();
-    const [receipts, setReceipts] = useState<any[]>([]);
+    const [receipts, setReceipts] = useState<Receipt[]>([]);
 
     const history = useHistory();
 
@@ -86,7 +88,8 @@ export const Receipts: React.FC<ReceiptsProps> = (props) => {
                     {
                         Header: 'Notification date',
                         accessor: 'notificationDate',
-                        Cell: (props) => new Date(props.value).toLocaleDateString()
+                        Cell: (props: CellProps<Receipt, Receipt['notificationDate']>) =>
+                            props.value && new Date(props.value).toLocaleDateString()
                     },
                     {
                         Header: 'Picture id',
@@ -95,7 +98,8 @@ export const Receipts: React.FC<ReceiptsProps> = (props) => {
                     {
                         Header: 'Purchase date',
                         accessor: 'purchaseDate',
-                        Cell: (props) => new Date(props.value).toLocaleDateString()
+                        Cell: (props: CellProps<Receipt, Receipt['purchaseDate']>) =>
+                            new Date(props.value).toLocaleDateString()
                     },
                     {
                         Header: 'Reference',

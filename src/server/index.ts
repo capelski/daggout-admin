@@ -17,7 +17,7 @@ const multerMiddleware = multer({
     storage: multer.memoryStorage()
 });
 
-app.use('/', express.static(join(__dirname, '..', 'public')));
+app.use('/', express.static(join(__dirname, '..', '..', 'public')));
 
 app.post('/api/auth', express.json(), authHandler);
 
@@ -41,7 +41,7 @@ app.post(
 
 app.use((_req, res, _next) => {
     // Redirect any non-existing route to index.html
-    res.sendFile(join(__dirname, '..', 'public', 'index.html'));
+    res.sendFile(join(__dirname, '..', '..', 'public', 'index.html'));
 });
 
 app.listen(port, () => {

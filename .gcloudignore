@@ -2,8 +2,7 @@
 .vscode/
 node_modules/
 scripts/
-src-client/
-src-server/
+src/
 # .env file must be ignored in production so env-variables.yaml parameters are used instead
 .env
 .gcloudignore

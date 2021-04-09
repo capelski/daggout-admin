@@ -1,13 +1,13 @@
 import React from 'react';
 import { Column, Row, useTable } from 'react-table';
 
-interface CustomTableProps {
-    columns: Column<any>[];
-    data: any[];
-    onRowClick?: (row: Row<any>) => void;
+interface CustomTableProps<T extends {}> {
+    columns: Column<T>[];
+    data: T[];
+    onRowClick?: (row: Row<T>) => void;
 }
 
-export const CustomTable: React.FC<CustomTableProps> = (props) => {
+export const CustomTable = <T extends {}>(props: CustomTableProps<T>) => {
     const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } = useTable({
         columns: props.columns,
         data: props.data
@@ -59,17 +59,17 @@ export const CustomTable: React.FC<CustomTableProps> = (props) => {
     );
 };
 
-interface EditableCellProps {
-    accessor: string;
-    collection: any[];
+interface EditableCellProps<T extends {}> {
+    accessor: keyof T;
+    collection: T[];
     disabled?: boolean;
     inputType?: string;
     rowIndex: number;
-    setCollection: (collection: any[]) => void;
-    value: any;
+    setCollection: (collection: T[]) => void;
+    value: string | number;
 }
 
-export const EditableCell: React.FC<EditableCellProps> = (props) => {
+export const EditableCell = <T extends {}>(props: EditableCellProps<T>) => {
     const [localValue, setLocalValue] = React.useState(props.value);
 
     return (

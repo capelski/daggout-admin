@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { FirebaseStats as IFirebaseStats } from '../../../shared/types';
 import { CustomTable } from './custom-table';
 
 interface FirebaseStatsProps {
@@ -7,7 +8,7 @@ interface FirebaseStatsProps {
 
 export const FirebaseStats: React.FC<FirebaseStatsProps> = (props) => {
     const [errorMessage, setErrorMessage] = useState<string>();
-    const [stats, setStats] = useState<any>({});
+    const [stats, setStats] = useState<Partial<IFirebaseStats>>({});
 
     useEffect(() => {
         fetch('/api/firebase-stats', {

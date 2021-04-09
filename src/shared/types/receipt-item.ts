@@ -1,4 +1,4 @@
-interface ReceiptItem {
+export interface ReceiptItem {
     amount: number;
     category: string;
     color: string;

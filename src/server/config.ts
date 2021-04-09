@@ -15,6 +15,7 @@ export const config = {
     FIREBASE_SERVICE_ACCOUNT: require(join(
         __dirname,
         '..',
+        '..',
         process.env.FIREBASE_SERVICE_ACCOUNT_FILE!
     )),
     FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET,

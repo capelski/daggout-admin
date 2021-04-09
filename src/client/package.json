@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "build": "npm run clean:public && webpack --config webpack/production.config.js",
-        "clean:public": "rm -rf ../public",
+        "clean:public": "rm -rf ../../public",
         "start:dev": "webpack serve --config webpack/development.config.js"
     },
     "keywords": [],

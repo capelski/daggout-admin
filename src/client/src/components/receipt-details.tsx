@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
+import { CellProps } from 'react-table';
+import { Receipt, ReceiptItem } from '../../../shared/types';
 import { brands } from '../brands';
 import { categories } from '../categories';
 import { CustomTable, EditableCell } from './custom-table';
@@ -11,18 +13,20 @@ interface ReceiptDetailsProps {
 export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
     const history = useHistory();
     const location = useLocation();
-    const receipt: any = location.state;
+    const receipt = location.state as Receipt | undefined;
     const isReadOnlyMode = receipt !== undefined;
 
     const [address, setAddress] = useState(receipt?.address || '');
-    const [amount, setAmount] = useState(receipt?.amount || '');
+    const [amount, setAmount] = useState(String(receipt?.amount || ''));
     const [brand, setBrand] = useState(receipt?.brand || '');
-    const [devolutionPeriod, setDevolutionPeriod] = useState(receipt?.devolutionPeriod || '30');
+    const [devolutionPeriod, setDevolutionPeriod] = useState(
+        String(receipt?.devolutionPeriod || 30)
+    );
     const [errorMessages, setErrorMessages] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [items, setItems] = useState<any[]>(receipt?.items || [{}]);
+    const [items, setItems] = useState<ReceiptItem[]>(receipt?.items || [{} as ReceiptItem]);
     const [notificationAdvance, setNotificationAdvance] = useState(
-        receipt?.notificationAdvance || '7'
+        String(receipt?.notificationAdvance || 7)
     );
     const [picture, setPicture] = useState<File>();
     const [purchaseDate, setPurchaseDate] = useState(
@@ -32,7 +36,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
     const [userId, setUserId] = useState(receipt?.userId || '');
 
     const addItemHandler = () => {
-        setItems(items.concat([{}]));
+        setItems(items.concat([{} as ReceiptItem]));
     };
 
     const createReceiptHandler = () => {
@@ -170,7 +174,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             {isReadOnlyMode ? (
                 <p>
                     Picture
-                    <input disabled={true} type="text" value={receipt.pictureId} />
+                    <input disabled={true} type="text" value={receipt!.pictureId} />
                 </p>
             ) : (
                 <p>
@@ -196,7 +200,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                     {
                         Header: 'Amount',
                         accessor: 'amount',
-                        Cell: (props) => (
+                        Cell: (props: CellProps<ReceiptItem>) => (
                             <EditableCell
                                 accessor="amount"
                                 collection={items}
@@ -211,7 +215,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                     {
                         Header: 'Category',
                         accessor: 'category',
-                        Cell: (props) => (
+                        Cell: (props: CellProps<ReceiptItem>) => (
                             <select
                                 disabled={isReadOnlyMode || isLoading}
                                 onChange={(event) => {
@@ -235,7 +239,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                     {
                         Header: 'Color',
                         accessor: 'color',
-                        Cell: (props) => (
+                        Cell: (props: CellProps<ReceiptItem>) => (
                             <EditableCell
                                 accessor="color"
                                 collection={items}
@@ -249,7 +253,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                     {
                         Header: 'Name',
                         accessor: 'name',
-                        Cell: (props) => (
+                        Cell: (props: CellProps<ReceiptItem>) => (
                             <EditableCell
                                 accessor="name"
                                 collection={items}
@@ -263,7 +267,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                     {
                         Header: 'Quantity',
                         accessor: 'quantity',
-                        Cell: (props) => (
+                        Cell: (props: CellProps<ReceiptItem>) => (
                             <EditableCell
                                 accessor="quantity"
                                 collection={items}
@@ -278,7 +282,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                     {
                         Header: 'Reference',
                         accessor: 'reference',
-                        Cell: (props) => (
+                        Cell: (props: CellProps<ReceiptItem>) => (
                             <EditableCell
                                 accessor="reference"
                                 collection={items}
@@ -292,7 +296,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                     {
                         Header: 'Size',
                         accessor: 'size',
-                        Cell: (props) => (
+                        Cell: (props: CellProps<ReceiptItem>) => (
                             <EditableCell
                                 accessor="size"
                                 collection={items}
@@ -305,7 +309,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                     },
                     {
                         Header: 'Options',
-                        Cell: (props) => (
+                        Cell: (props: CellProps<ReceiptItem>) => (
                             <button
                                 disabled={isReadOnlyMode || isLoading}
                                 onClick={() => {

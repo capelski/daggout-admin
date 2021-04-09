@@ -31,7 +31,7 @@ module.exports = {
     },
     output: {
         filename: 'main.js',
-        path: resolve(__dirname, '..', '..', 'public'),
+        path: resolve(__dirname, '..', '..', '..', 'public'),
         publicPath: '/'
     },
     plugins: [

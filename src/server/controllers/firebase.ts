@@ -1,7 +1,8 @@
 import express from 'express';
 import firebase from 'firebase-admin';
+import { FirebaseStats } from '../../shared/types';
 import { config } from '../config';
-import { UserData } from '../types/user-data';
+import { FirebaseUserData } from '../types/firebase-user-data';
 
 export const firebaseStatsHandler: express.Handler = (req, res, next) => {
     let usersDictionary: { [key: string]: string };
@@ -37,7 +38,7 @@ export const firebaseStatsHandler: express.Handler = (req, res, next) => {
                 };
             }>(
                 (reduced, userKey) => {
-                    const user: UserData = users[userKey];
+                    const user: FirebaseUserData = users[userKey];
 
                     const doesUserHaveReceipts = user.receipts !== undefined;
                     const userReceipts = doesUserHaveReceipts
@@ -112,14 +113,16 @@ export const firebaseStatsHandler: express.Handler = (req, res, next) => {
                     return referralsDiff !== 0 ? referralsDiff : b.userEmail > a.userEmail ? -1 : 1;
                 });
 
-            return res.json({
+            const firebaseStats: FirebaseStats = {
                 notifiableUsers: Object.keys(users).length,
                 uploadedReceipts: aggregatedData.totalReceipts,
                 usersWithoutReceipt: aggregatedData.receiptLessUsers,
                 receiptsRanking,
                 usersWithReferralCode: Object.keys(aggregatedData.referralCodes).length,
                 referrals
-            });
+            };
+
+            return res.json(firebaseStats);
         })
         .catch((error) => {
             console.error(error);

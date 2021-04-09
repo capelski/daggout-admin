@@ -1,7 +1,7 @@
-export interface UserData {
+export interface FirebaseUserData {
     customData?: {
         referralCode?: string;
         referredBy?: string;
-    }
-    receipts?: {}[]
+    };
+    receipts?: {}[];
 }

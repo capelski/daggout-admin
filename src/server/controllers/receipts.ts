@@ -450,7 +450,7 @@ export const getReceiptsHandler: express.Handler = (req, res, next) => {
     }
 };
 
-export const getUserReceiptsHandler: express.Handler = (req, res, next) => {
+export const getUserReceiptsHandler = (schema?: string): express.Handler => (req, res, next) => {
     const { daggoutId, firebaseId } = req.query;
 
     if (!daggoutId) {
@@ -464,7 +464,7 @@ export const getUserReceiptsHandler: express.Handler = (req, res, next) => {
 
             return new Promise<Receipt[]>((resolve, reject) => {
                 connection.query(
-                    'SELECT * FROM receipt WHERE userId = ?;',
+                    `SELECT * FROM ${schema ? schema + '.' : ''}receipt WHERE userId = ?;`,
                     [daggoutId],
                     (error, results, fields) => {
                         try {

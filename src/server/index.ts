@@ -23,7 +23,7 @@ app.post('/api/auth', express.json(), authHandler);
 
 app.post('/api/refresh-token', authMiddleware, refreshTokenHandler);
 
-app.get('/api/user-receipts', getUserReceiptsHandler);
+app.get('/api/user-receipts', getUserReceiptsHandler());
 
 app.get('/api/firebase-stats', authMiddleware, firebaseStatsHandler);
 
@@ -38,6 +38,10 @@ app.post(
     multerMiddleware.single('picture'),
     createReceiptHandler
 );
+
+// For development purposes only
+
+app.get('/development/api/user-receipts', getUserReceiptsHandler('daggout_development'));
 
 app.use((_req, res, _next) => {
     // Redirect any non-existing route to index.html

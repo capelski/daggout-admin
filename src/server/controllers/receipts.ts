@@ -354,53 +354,57 @@ export const getReceiptByIdHandler: express.Handler = (req, res, next) => {
                         );
                     })
                         .then((receipt) => {
-                            const firebaseApp = firebase.initializeApp({
-                                credential: firebase.credential.cert(
-                                    config.FIREBASE_SERVICE_ACCOUNT
-                                ),
-                                databaseURL: config.FIREBASE_DATABASE_URL,
-                                storageBucket: config.FIREBASE_STORAGE_BUCKET
-                            });
-
-                            return firebaseApp
-                                .database()
-                                .ref(`daggoutIds/${receipt.userId}`)
-                                .once('value')
-                                .then((snapshot) => {
-                                    const firebaseUserId = snapshot.val();
-
-                                    return firebase
-                                        .storage()
-                                        .bucket()
-                                        .file(`receipts/${firebaseUserId}/${receipt.pictureId}`)
-                                        .getSignedUrl({
-                                            action: 'read',
-                                            expires: new Date().getTime() + 3600 * 1000
-                                        })
-                                        .then((signedUrls) => {
-                                            return res.json({
-                                                ...receipt,
-                                                pictureUrl: signedUrls[0]
-                                            });
-                                        })
-                                        .catch((error) => {
-                                            console.error(
-                                                "Error getting the receipt's picture url",
-                                                error
-                                            );
-                                            return res.json(receipt);
-                                        });
-                                })
-                                .catch((error) => {
-                                    console.error(
-                                        `Error getting "${receipt.userId}" daggout ID`,
-                                        JSON.stringify(error)
-                                    );
-                                    return res.json(receipt);
-                                })
-                                .finally(() => {
-                                    firebaseApp.delete();
+                            if (receipt.pictureId) {
+                                const firebaseApp = firebase.initializeApp({
+                                    credential: firebase.credential.cert(
+                                        config.FIREBASE_SERVICE_ACCOUNT
+                                    ),
+                                    databaseURL: config.FIREBASE_DATABASE_URL,
+                                    storageBucket: config.FIREBASE_STORAGE_BUCKET
                                 });
+
+                                return firebaseApp
+                                    .database()
+                                    .ref(`daggoutIds/${receipt.userId}`)
+                                    .once('value')
+                                    .then((snapshot) => {
+                                        const firebaseUserId = snapshot.val();
+
+                                        return firebase
+                                            .storage()
+                                            .bucket()
+                                            .file(`receipts/${firebaseUserId}/${receipt.pictureId}`)
+                                            .getSignedUrl({
+                                                action: 'read',
+                                                expires: new Date().getTime() + 3600 * 1000
+                                            })
+                                            .then((signedUrls) => {
+                                                return res.json({
+                                                    ...receipt,
+                                                    pictureUrl: signedUrls[0]
+                                                });
+                                            })
+                                            .catch((error) => {
+                                                console.error(
+                                                    "Error getting the receipt's picture url",
+                                                    error
+                                                );
+                                                return res.json(receipt);
+                                            });
+                                    })
+                                    .catch((error) => {
+                                        console.error(
+                                            `Error getting "${receipt.userId}" daggout ID`,
+                                            JSON.stringify(error)
+                                        );
+                                        return res.json(receipt);
+                                    })
+                                    .finally(() => {
+                                        firebaseApp.delete();
+                                    });
+                            } else {
+                                return res.json(receipt);
+                            }
                         })
                         .catch((error) => {
                             console.error('Error querying the receipt items', error);

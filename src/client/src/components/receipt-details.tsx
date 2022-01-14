@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { CellProps } from 'react-table';
+import { validateReceipt } from '../../../shared/repositories/receipts';
 import { Receipt, ReceiptItem } from '../../../shared/types';
 import { brands } from '../brands';
 import { categories } from '../categories';
@@ -40,52 +41,59 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
     };
 
     const createReceiptHandler = () => {
-        setErrorMessages([]);
-        setIsLoading(true);
-        const formData = new FormData();
+        const receiptData = {
+            address,
+            amount: parseFloat(amount),
+            brand,
+            devolutionPeriod: parseInt(devolutionPeriod),
+            notificationAdvance: parseInt(notificationAdvance),
+            items,
+            purchaseDate: new Date(purchaseDate).getTime(),
+            reference,
+            userId
+        };
+        const errors = validateReceipt(receiptData);
+        if (!picture) {
+            errors.unshift({ message: 'Missing receipt picture' });
+        }
 
-        formData.append(
-            'receipt',
-            JSON.stringify({
-                address,
-                amount: parseFloat(amount),
-                brand,
-                devolutionPeriod: parseInt(devolutionPeriod),
-                notificationAdvance: parseInt(notificationAdvance),
-                items,
-                purchaseDate: new Date(purchaseDate).getTime(),
-                reference,
-                userId
-            })
-        );
-        picture && formData.append('picture', picture, picture.name);
+        if (errors.length > 0) {
+            setErrorMessages(errors.map((e) => e.message));
+        } else {
+            setErrorMessages([]);
+            setIsLoading(true);
 
-        fetch('/api/receipts', {
-            body: formData,
-            headers: {
-                Authorization: props.authToken
-            },
-            method: 'POST'
-        })
-            .then((response) => {
-                if (response.ok) {
-                    history.push('/receipts');
-                } else {
-                    response.json().then((error) => {
-                        setIsLoading(false);
-                        if (error instanceof Array) {
-                            setErrorMessages(error.map((e) => e.message));
-                        } else {
-                            setErrorMessages([error.message]);
-                        }
-                    });
-                }
+            const formData = new FormData();
+            formData.append('receipt', JSON.stringify(receiptData));
+            picture && formData.append('picture', picture, picture.name);
+
+            fetch('/api/receipts', {
+                body: formData,
+                headers: {
+                    Authorization: props.authToken
+                },
+                method: 'POST'
             })
-            .catch((error) => {
-                console.error(error);
-                setErrorMessages([error]);
-                setIsLoading(false);
-            });
+                .then((response) => {
+                    if (response.ok) {
+                        history.push('/receipts');
+                    } else {
+                        response.json().then((error) => {
+                            setIsLoading(false);
+                            if (error instanceof Array) {
+                                setErrorMessages(error.map((e) => e.message));
+                            } else {
+                                setErrorMessages([error.message]);
+                            }
+                        });
+                    }
+                })
+                .catch((error) => {
+                    console.error(error);
+                    setErrorMessages([error]);
+                    setIsLoading(false);
+                });
+        }
     };
 
     return (

@@ -3,6 +3,7 @@ import firebase from 'firebase-admin';
 import { ResultSetHeader } from 'mysql2';
 import fetch from 'node-fetch';
 import { v4 as uuid } from 'uuid';
+import { validateReceipt } from '../../shared/repositories/receipts';
 import { Receipt, ReceiptItem } from '../../shared/types';
 import { config } from '../config';
 import { getDbConnection, isJsonString, jsDateToMySqlDate, parseReceiptDates } from '../utils';
@@ -20,64 +21,7 @@ export const createReceiptHandler: express.Handler = (req, res, next) => {
         }
 
         const receipt: Receipt = JSON.parse(receiptData);
-        const errors: { message: string }[] = [];
-
-        if (!receipt.address) {
-            errors.push({ message: 'Missing receipt Address' });
-        }
-        if (!receipt.amount || isNaN(receipt.amount)) {
-            errors.push({ message: 'Missing receipt Amount' });
-        }
-        if (!receipt.brand) {
-            errors.push({ message: 'Missing receipt Brand' });
-        }
-        if (receipt.devolutionPeriod && isNaN(receipt.devolutionPeriod)) {
-            errors.push({ message: 'Wrong Devolution period' });
-        }
-        if (receipt.notificationAdvance && isNaN(receipt.notificationAdvance)) {
-            errors.push({ message: 'Wrong Notification advance' });
-        }
-        if (!receipt.purchaseDate || isNaN(receipt.purchaseDate)) {
-            errors.push({ message: 'Missing receipt Purchase date' });
-        }
-        if (!receipt.reference) {
-            errors.push({ message: 'Missing receipt Reference' });
-        }
-        if (!receipt.userId) {
-            errors.push({ message: 'Missing receipt User id' });
-        }
-
-        if (!receipt.items || !(receipt.items instanceof Array) || receipt.items.length === 0) {
-            errors.push({ message: 'Missing receipt Items' });
-        } else {
-            receipt.items.forEach((receiptItem, index) => {
-                if (!receiptItem.amount || isNaN(receiptItem.amount)) {
-                    errors.push({
-                        message: `Receipt item ${index + 1}: Missing item amount`
-                    });
-                }
-                if (!receiptItem.category) {
-                    errors.push({
-                        message: `Receipt item ${index + 1}: Missing item category`
-                    });
-                }
-                if (!receiptItem.name) {
-                    errors.push({
-                        message: `Receipt item ${index + 1}: Missing item name`
-                    });
-                }
-                if (!receiptItem.quantity || isNaN(receiptItem.quantity)) {
-                    errors.push({
-                        message: `Receipt item ${index + 1}: Missing item quantity`
-                    });
-                }
-                if (!receiptItem.reference) {
-                    errors.push({
-                        message: `Receipt item ${index + 1}: Missing item reference`
-                    });
-                }
-            });
-        }
+        const errors = validateReceipt(receipt);
 
         if (errors.length > 0) {
             return res.status(400).json(errors);
@@ -454,46 +398,48 @@ export const getReceiptsHandler: express.Handler = (req, res, next) => {
     }
 };
 
-export const getUserReceiptsHandler = (schema?: string): express.Handler => (req, res, next) => {
-    const { daggoutId, firebaseId } = req.query;
+export const getUserReceiptsHandler =
+    (schema?: string): express.Handler =>
+    (req, res, next) => {
+        const { daggoutId, firebaseId } = req.query;
 
-    if (!daggoutId) {
-        return res.status(400).json({ message: 'Missing daggoutId parameter' });
-    } else if (!firebaseId) {
-        return res.status(400).json({ message: 'Missing firebaseId parameter' });
-    } else {
-        try {
-            // TODO Check in Firebase that user/{firebaseId}/daggoutId === daggoutId
-            const connection = getDbConnection();
+        if (!daggoutId) {
+            return res.status(400).json({ message: 'Missing daggoutId parameter' });
+        } else if (!firebaseId) {
+            return res.status(400).json({ message: 'Missing firebaseId parameter' });
+        } else {
+            try {
+                // TODO Check in Firebase that user/{firebaseId}/daggoutId === daggoutId
+                const connection = getDbConnection();
 
-            return new Promise<Receipt[]>((resolve, reject) => {
-                connection.query(
-                    `SELECT * FROM ${schema ? schema + '.' : ''}receipt WHERE userId = ?;`,
-                    [daggoutId],
-                    (error, results, fields) => {
-                        try {
-                            connection.end();
-                        } catch {
-                            // If socket has been closed by the other side, trying to end the connection
-                            // will raise an exception; empty catch due to connection is already closed
+                return new Promise<Receipt[]>((resolve, reject) => {
+                    connection.query(
+                        `SELECT * FROM ${schema ? schema + '.' : ''}receipt WHERE userId = ?;`,
+                        [daggoutId],
+                        (error, results, fields) => {
+                            try {
+                                connection.end();
+                            } catch {
+                                // If socket has been closed by the other side, trying to end the connection
+                                // will raise an exception; empty catch due to connection is already closed
+                            }
+
+                            if (error) {
+                                reject(error);
+                            } else {
+                                resolve((results as Receipt[]).map(parseReceiptDates));
+                            }
                         }
-
-                        if (error) {
-                            reject(error);
-                        } else {
-                            resolve((results as Receipt[]).map(parseReceiptDates));
-                        }
-                    }
-                );
-            })
-                .then((receipts) => res.json(receipts))
-                .catch((error) => {
-                    console.error(error);
-                    return res.status(500).json({ message: 'Something went wrong' });
-                });
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ message: 'Something went wrong' });
+                    );
+                })
+                    .then((receipts) => res.json(receipts))
+                    .catch((error) => {
+                        console.error(error);
+                        return res.status(500).json({ message: 'Something went wrong' });
+                    });
+            } catch (error) {
+                console.error(error);
+                return res.status(500).json({ message: 'Something went wrong' });
+            }
         }
-    }
-};
+    };

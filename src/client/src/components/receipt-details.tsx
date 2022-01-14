@@ -5,6 +5,7 @@ import { validateReceipt } from '../../../shared/repositories/receipts';
 import { Receipt, ReceiptItem } from '../../../shared/types';
 import { brands } from '../brands';
 import { categories } from '../categories';
+import { mockReceipts } from '../mock-receipts';
 import { CustomTable, EditableCell } from './custom-table';
 
 interface ReceiptDetailsProps {
@@ -24,7 +25,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
         String(receipt?.devolutionPeriod || 30)
     );
     const [errorMessages, setErrorMessages] = useState<string[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    // const [isLoading, setIsLoading] = useState(false);
     const [items, setItems] = useState<ReceiptItem[]>(receipt?.items || [{} as ReceiptItem]);
     const [notificationAdvance, setNotificationAdvance] = useState(
         String(receipt?.notificationAdvance || 7)
@@ -41,13 +42,15 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
     };
 
     const createReceiptHandler = () => {
-        const receiptData = {
+        const receiptData: Receipt = {
             address,
             amount: parseFloat(amount),
             brand,
             devolutionPeriod: parseInt(devolutionPeriod),
-            notificationAdvance: parseInt(notificationAdvance),
+            id: new Date().getTime(),
             items,
+            notificationAdvance: parseInt(notificationAdvance),
+            pictureId: new Date().getTime() + '.jpg',
             purchaseDate: new Date(purchaseDate).getTime(),
             reference,
             userId
@@ -60,39 +63,55 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
         if (errors.length > 0) {
             setErrorMessages(errors.map((e) => e.message));
         } else {
-            setErrorMessages([]);
-            setIsLoading(true);
+            if (receiptData.devolutionPeriod && receiptData.notificationAdvance) {
+                const notificationDays =
+                    receiptData.devolutionPeriod - receiptData.notificationAdvance;
+                const purchaseDate = new Date(receiptData.purchaseDate);
+                receiptData.notificationDate = purchaseDate.setDate(
+                    purchaseDate.getDate() + notificationDays
+                );
+            }
 
-            const formData = new FormData();
-            formData.append('receipt', JSON.stringify(receiptData));
-            picture && formData.append('picture', picture, picture.name);
+            receiptData.items!.forEach((item) => {
+                item.id = Math.ceil(Math.random() * 100000);
+                item.receiptId = receiptData.id;
+            });
+            mockReceipts.push(receiptData);
+            history.push('/receipts');
 
-            fetch('/api/receipts', {
-                body: formData,
-                headers: {
-                    Authorization: props.authToken
-                },
-                method: 'POST'
-            })
-                .then((response) => {
-                    if (response.ok) {
-                        history.push('/receipts');
-                    } else {
-                        response.json().then((error) => {
-                            setIsLoading(false);
-                            if (error instanceof Array) {
-                                setErrorMessages(error.map((e) => e.message));
-                            } else {
-                                setErrorMessages([error.message]);
-                            }
-                        });
-                    }
-                })
-                .catch((error) => {
-                    console.error(error);
-                    setErrorMessages([error]);
-                    setIsLoading(false);
-                });
+            //     setErrorMessages([]);
+            //     setIsLoading(true);
+
+            //     const formData = new FormData();
+            //     formData.append('receipt', JSON.stringify(receiptData));
+            //     picture && formData.append('picture', picture, picture.name);
+
+            //     fetch('/api/receipts', {
+            //         body: formData,
+            //         headers: {
+            //             Authorization: props.authToken
+            //         },
+            //         method: 'POST'
+            //     })
+            //         .then((response) => {
+            //             if (response.ok) {
+            //                 history.push('/receipts');
+            //             } else {
+            //                 response.json().then((error) => {
+            //                     setIsLoading(false);
+            //                     if (error instanceof Array) {
+            //                         setErrorMessages(error.map((e) => e.message));
+            //                     } else {
+            //                         setErrorMessages([error.message]);
+            //                     }
+            //                 });
+            //             }
+            //         })
+            //         .catch((error) => {
+            //             console.error(error);
+            //             setErrorMessages([error]);
+            //             setIsLoading(false);
+            //         });
         }
     };
 
@@ -101,7 +120,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             <p>
                 Address
                 <input
-                    disabled={isReadOnlyMode || isLoading}
+                    disabled={isReadOnlyMode /*|| isLoading*/}
                     onChange={(event) => setAddress(event.target.value)}
                     type="text"
                     value={address}
@@ -110,7 +129,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             <p>
                 Amount
                 <input
-                    disabled={isReadOnlyMode || isLoading}
+                    disabled={isReadOnlyMode /*|| isLoading*/}
                     onChange={(event) => setAmount(event.target.value)}
                     type="number"
                     value={amount}
@@ -119,7 +138,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             <p>
                 Brand
                 <select
-                    disabled={isReadOnlyMode || isLoading}
+                    disabled={isReadOnlyMode /*|| isLoading*/}
                     onChange={(event) => {
                         setBrand(event.target.value);
                     }}
@@ -134,7 +153,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             <p>
                 Devolution period
                 <input
-                    disabled={isReadOnlyMode || isLoading}
+                    disabled={isReadOnlyMode /*|| isLoading*/}
                     onChange={(event) => setDevolutionPeriod(event.target.value)}
                     type="number"
                     value={devolutionPeriod}
@@ -143,7 +162,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             <p>
                 Notification advance
                 <input
-                    disabled={isReadOnlyMode || isLoading}
+                    disabled={isReadOnlyMode /*|| isLoading*/}
                     onChange={(event) => setNotificationAdvance(event.target.value)}
                     type="number"
                     value={notificationAdvance}
@@ -152,7 +171,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             <p>
                 Purchase date
                 <input
-                    disabled={isReadOnlyMode || isLoading}
+                    disabled={isReadOnlyMode /*|| isLoading*/}
                     onChange={(event) => {
                         setPurchaseDate(event.target.value);
                     }}
@@ -163,7 +182,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             <p>
                 Reference
                 <input
-                    disabled={isReadOnlyMode || isLoading}
+                    disabled={isReadOnlyMode /*|| isLoading*/}
                     onChange={(event) => setReference(event.target.value)}
                     type="text"
                     value={reference}
@@ -172,7 +191,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             <p>
                 User id
                 <input
-                    disabled={isReadOnlyMode || isLoading}
+                    disabled={isReadOnlyMode /*|| isLoading*/}
                     onChange={(event) => setUserId(event.target.value)}
                     type="text"
                     value={userId}
@@ -188,7 +207,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                 <p>
                     Picture
                     <input
-                        disabled={isLoading}
+                        // disabled={isLoading}
                         onChange={(event) => {
                             setPicture(event.target.files?.item(0) || undefined);
                         }}
@@ -200,7 +219,11 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             {receipt?.pictureUrl && <img src={receipt.pictureUrl} style={{ maxWidth: '100%' }} />}
 
             <h4>Items</h4>
-            <button disabled={isReadOnlyMode || isLoading} onClick={addItemHandler} type="button">
+            <button
+                disabled={isReadOnlyMode /*|| isLoading*/}
+                onClick={addItemHandler}
+                type="button"
+            >
                 Add item
             </button>
             <CustomTable
@@ -212,7 +235,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                             <EditableCell
                                 accessor="amount"
                                 collection={items}
-                                disabled={isReadOnlyMode || isLoading}
+                                disabled={isReadOnlyMode /*|| isLoading*/}
                                 inputType="number"
                                 rowIndex={props.row.index}
                                 setCollection={setItems}
@@ -225,7 +248,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                         accessor: 'category',
                         Cell: (props: CellProps<ReceiptItem>) => (
                             <select
-                                disabled={isReadOnlyMode || isLoading}
+                                disabled={isReadOnlyMode /*|| isLoading*/}
                                 onChange={(event) => {
                                     setItems(
                                         items.map((item, itemIndex) => {
@@ -251,7 +274,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                             <EditableCell
                                 accessor="color"
                                 collection={items}
-                                disabled={isReadOnlyMode || isLoading}
+                                disabled={isReadOnlyMode /*|| isLoading*/}
                                 rowIndex={props.row.index}
                                 setCollection={setItems}
                                 value={props.value}
@@ -265,7 +288,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                             <EditableCell
                                 accessor="name"
                                 collection={items}
-                                disabled={isReadOnlyMode || isLoading}
+                                disabled={isReadOnlyMode /*|| isLoading*/}
                                 rowIndex={props.row.index}
                                 setCollection={setItems}
                                 value={props.value}
@@ -279,7 +302,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                             <EditableCell
                                 accessor="quantity"
                                 collection={items}
-                                disabled={isReadOnlyMode || isLoading}
+                                disabled={isReadOnlyMode /*|| isLoading*/}
                                 inputType="number"
                                 rowIndex={props.row.index}
                                 setCollection={setItems}
@@ -294,7 +317,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                             <EditableCell
                                 accessor="reference"
                                 collection={items}
-                                disabled={isReadOnlyMode || isLoading}
+                                disabled={isReadOnlyMode /*|| isLoading*/}
                                 rowIndex={props.row.index}
                                 setCollection={setItems}
                                 value={props.value}
@@ -308,7 +331,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                             <EditableCell
                                 accessor="size"
                                 collection={items}
-                                disabled={isReadOnlyMode || isLoading}
+                                disabled={isReadOnlyMode /*|| isLoading*/}
                                 rowIndex={props.row.index}
                                 setCollection={setItems}
                                 value={props.value}
@@ -319,7 +342,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
                         Header: 'Options',
                         Cell: (props: CellProps<ReceiptItem>) => (
                             <button
-                                disabled={isReadOnlyMode || isLoading}
+                                disabled={isReadOnlyMode /*|| isLoading*/}
                                 onClick={() => {
                                     setItems(
                                         items.filter(
@@ -346,21 +369,21 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             {isReadOnlyMode ? undefined : (
                 <div style={{ display: 'flex' }}>
                     <button
-                        disabled={isReadOnlyMode || isLoading}
+                        // disabled={isLoading}
                         onClick={createReceiptHandler}
                         type="button"
                     >
                         Send
                     </button>
 
-                    {isLoading && (
+                    {/* {isLoading && (
                         <img
                             height={32}
                             src="/images/spinner.gif"
                             style={{ marginLeft: 16 }}
                             width={32}
                         />
-                    )}
+                    )} */}
                 </div>
             )}
         </div>

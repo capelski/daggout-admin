@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { /*useEffect,*/ useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { CellProps } from 'react-table';
 import { Receipt } from '../../../shared/types';
+import { mockReceipts } from '../mock-receipts';
 import { CustomTable } from './custom-table';
 
 interface ReceiptsProps {
@@ -9,66 +10,70 @@ interface ReceiptsProps {
 }
 
 export const Receipts: React.FC<ReceiptsProps> = (props) => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [errorMessage, setErrorMessage] = useState<string>();
-    const [receipts, setReceipts] = useState<Receipt[]>([]);
+    // const [isLoading, setIsLoading] = useState(true);
+    // const [errorMessage, setErrorMessage] = useState<string>();
+    const [receipts /*, setReceipts*/] = useState<Receipt[]>(mockReceipts);
 
     const history = useHistory();
 
-    useEffect(() => {
-        fetch('/api/receipts', {
-            headers: {
-                Authorization: props.authToken
-            },
-            method: 'GET'
-        })
-            .then((response) => {
-                if (response.ok) {
-                    response.json().then(setReceipts);
-                } else {
-                    response.json().then((error) => setErrorMessage(error.message));
-                }
-            })
-            .catch((error) => {
-                console.error(error);
-                setErrorMessage(error);
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
-    }, []);
+    // useEffect(() => {
+    //     fetch('/api/receipts', {
+    //         headers: {
+    //             Authorization: props.authToken
+    //         },
+    //         method: 'GET'
+    //     })
+    //         .then((response) => {
+    //             if (response.ok) {
+    //                 response.json().then(setReceipts);
+    //             } else {
+    //                 response.json().then((error) => setErrorMessage(error.message));
+    //             }
+    //         })
+    //         .catch((error) => {
+    //             console.error(error);
+    //             setErrorMessage(error);
+    //         })
+    //         .finally(() => {
+    //             setIsLoading(false);
+    //         });
+    // }, []);
 
-    const fetchReceipt = (id: number) => {
-        setIsLoading(true);
-        fetch(`/api/receipts/${id}`, {
-            headers: {
-                Authorization: props.authToken
-            },
-            method: 'GET'
-        })
-            .then((response) => {
-                if (response.ok) {
-                    response.json().then((receipt) => {
-                        history.push('/receipt-details', receipt);
-                    });
-                } else {
-                    setIsLoading(false);
-                    response.json().then((error) => setErrorMessage(error.message));
-                }
-            })
-            .catch((error) => {
-                setIsLoading(false);
-                console.error(error);
-                setErrorMessage(error);
-            });
+    // const fetchReceipt = (id: number) => {
+    //     setIsLoading(true);
+    //     fetch(`/api/receipts/${id}`, {
+    //         headers: {
+    //             Authorization: props.authToken
+    //         },
+    //         method: 'GET'
+    //     })
+    //         .then((response) => {
+    //             if (response.ok) {
+    //                 response.json().then((receipt) => {
+    //                     history.push('/receipt-details', receipt);
+    //                 });
+    //             } else {
+    //                 setIsLoading(false);
+    //                 response.json().then((error) => setErrorMessage(error.message));
+    //             }
+    //         })
+    //         .catch((error) => {
+    //             setIsLoading(false);
+    //             console.error(error);
+    //             setErrorMessage(error);
+    //         });
+    // };
+
+    const navigateToReceipt = (receipt: Receipt) => {
+        history.push('/receipt-details', receipt);
     };
 
     return (
         <React.Fragment>
-            {isLoading && (
+            {/* {isLoading && (
                 <img height={32} src="/images/spinner.gif" style={{ marginLeft: 16 }} width={32} />
             )}
-            <p>{errorMessage}</p>
+            <p>{errorMessage}</p> */}
             <CustomTable
                 columns={[
                     {
@@ -99,7 +104,7 @@ export const Receipts: React.FC<ReceiptsProps> = (props) => {
                         Header: 'Notification date',
                         accessor: 'notificationDate',
                         Cell: (props: CellProps<Receipt, Receipt['notificationDate']>) =>
-                            props.value && new Date(props.value).toLocaleDateString()
+                            (props.value && new Date(props.value).toLocaleDateString()) || ''
                     },
                     {
                         Header: 'Picture id',
@@ -121,7 +126,8 @@ export const Receipts: React.FC<ReceiptsProps> = (props) => {
                     }
                 ]}
                 data={receipts}
-                onRowClick={isLoading ? undefined : (row) => fetchReceipt(row.original.id)}
+                // onRowClick={isLoading ? undefined : (row) => fetchReceipt(row.original.id)}
+                onRowClick={(row) => navigateToReceipt(row.original)}
             />
         </React.Fragment>
     );

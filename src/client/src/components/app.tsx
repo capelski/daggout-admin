@@ -10,7 +10,7 @@ export const App: React.FC = () => {
     const [authToken, setAuthToken] = useState<string>();
 
     return authToken ? (
-        <BrowserRouter>
+        <BrowserRouter basename="/daggout-admin">
             <nav>
                 <Link to="/receipt-details" className="navbar-link">
                     Create receipt

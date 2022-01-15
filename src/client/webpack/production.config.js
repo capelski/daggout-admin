@@ -1,6 +1,18 @@
+const PrerenderSPAPlugin = require('@dreysolano/prerender-spa-plugin');
+const { resolve } = require('path');
 const { merge } = require('webpack-merge');
 const baseConfig = require('./base.config');
 
 module.exports = merge(baseConfig, {
-    mode: 'production'
+    mode: 'production',
+    plugins: [
+        new PrerenderSPAPlugin({
+            staticDir: resolve(__dirname, '..', '..', '..', 'docs'),
+            routes: [
+                '/daggout-admin/receipt-details',
+                '/daggout-admin/receipts',
+                '/daggout-admin/firebase-stats'
+            ]
+        })
+    ]
 });

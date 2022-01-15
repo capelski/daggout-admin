@@ -17,7 +17,7 @@ const multerMiddleware = multer({
     storage: multer.memoryStorage()
 });
 
-app.use('/', express.static(join(__dirname, '..', '..', 'public')));
+app.use('/daggout-admin', express.static(join(__dirname, '..', '..', 'docs')));
 
 app.post('/api/auth', express.json(), authHandler);
 
@@ -45,7 +45,7 @@ app.get('/development/api/user-receipts', getUserReceiptsHandler('daggout_develo
 
 app.use((_req, res, _next) => {
     // Redirect any non-existing route to index.html
-    res.sendFile(join(__dirname, '..', '..', 'public', 'index.html'));
+    res.sendFile(join(__dirname, '..', '..', 'docs', 'index.html'));
 });
 
 app.listen(port, () => {

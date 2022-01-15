@@ -4,8 +4,8 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "build": "npm run clean:public && webpack --config webpack/production.config.js",
-        "clean:public": "rm -rf ../../public",
+        "build": "npm run clean:docs && webpack --config webpack/production.config.js",
+        "clean:docs": "rm -rf ../../docs",
         "start:dev": "webpack serve --config webpack/development.config.js"
     },
     "keywords": [],

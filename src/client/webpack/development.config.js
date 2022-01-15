@@ -6,6 +6,8 @@ module.exports = merge(baseConfig, {
     devServer: {
         historyApiFallback: true,
         open: true,
-        proxy: { '/api': 'http://localhost:3000' }
+        openPage: 'daggout-admin',
+        // proxy: { '/api': 'http://localhost:3000' },
+        publicPath: '/daggout-admin'
     }
 });

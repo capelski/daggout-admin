@@ -31,8 +31,8 @@ module.exports = {
     },
     output: {
         filename: 'main.js',
-        path: resolve(__dirname, '..', '..', '..', 'public'),
-        publicPath: '/'
+        path: resolve(__dirname, '..', '..', '..', 'docs'),
+        publicPath: '/daggout-admin/'
     },
     plugins: [
         // new webpack.DefinePlugin({

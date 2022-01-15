@@ -11,8 +11,8 @@ const mockToken =
 export const Auth: React.FC<AuthProps> = (props) => {
     const [errorMessage, setErrorMessage] = useState<string>();
     const [isLoading, setIsLoading] = useState(false);
-    const [password, setPassword] = useState('');
-    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('sample');
+    const [username, setUsername] = useState('sample');
 
     useEffect(() => {
         const savedAuthToken = getAuthToken();
@@ -127,8 +127,11 @@ export const Auth: React.FC<AuthProps> = (props) => {
                 }}
                 type="button"
             >
-                Send
+                Sign in
             </button>
+            <p style={{ fontStyle: 'italic' }}>
+                Demonstration purposes website: any username/password combination is valid
+            </p>
         </div>
     );
 };

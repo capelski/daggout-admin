@@ -8,11 +8,7 @@ module.exports = merge(baseConfig, {
     plugins: [
         new PrerenderSPAPlugin({
             staticDir: resolve(__dirname, '..', '..', '..', 'docs'),
-            routes: [
-                '/daggout-admin/receipt-details',
-                '/daggout-admin/receipts',
-                '/daggout-admin/firebase-stats'
-            ]
+            routes: ['/receipt-details', '/receipts', '/firebase-stats']
         })
     ]
 });

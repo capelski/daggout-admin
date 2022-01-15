@@ -5,7 +5,7 @@ import { validateReceipt } from '../../../shared/repositories/receipts';
 import { Receipt, ReceiptItem } from '../../../shared/types';
 import { brands } from '../brands';
 import { categories } from '../categories';
-import { mockReceipts } from '../mock-receipts';
+import { getReceiptItemId, mockReceipts } from '../mock-receipts';
 import { CustomTable, EditableCell } from './custom-table';
 
 interface ReceiptDetailsProps {
@@ -73,7 +73,7 @@ export const ReceiptDetails: React.FC<ReceiptDetailsProps> = (props) => {
             }
 
             receiptData.items!.forEach((item) => {
-                item.id = Math.ceil(Math.random() * 100000);
+                item.id = getReceiptItemId();
                 item.receiptId = receiptData.id;
             });
             mockReceipts.push(receiptData);
